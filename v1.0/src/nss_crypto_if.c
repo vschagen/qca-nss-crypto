@@ -681,6 +681,7 @@ nss_crypto_status_t nss_crypto_send_session_update(uint32_t session_idx, enum ns
 		iv_len = NSS_CRYPTO_MAX_IVLEN_DES;
 		break;
 
+	case NSS_CRYPTO_CIPHER_AES_ECB:
 	case NSS_CRYPTO_CIPHER_NULL:
 		iv_len = NSS_CRYPTO_MAX_IVLEN_NULL;
 		break;
@@ -712,6 +713,7 @@ nss_crypto_status_t nss_crypto_send_session_update(uint32_t session_idx, enum ns
 
 	return status;
 }
+EXPORT_SYMBOL(nss_crypto_send_session_update);
 
 /**
  * @brief crypto buf get api for IV address
