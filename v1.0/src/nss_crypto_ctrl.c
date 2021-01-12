@@ -1101,6 +1101,66 @@ fail:
 EXPORT_SYMBOL(nss_crypto_session_alloc);
 
 /*
+ * nss_crypto_session_key_update()
+ * 	Updates the key within a crypto session operation
+ */
+nss_crypto_status_t nss_crypto_session_key_update(nss_crypto_handle_t crypto, struct nss_crypto_key *cipher, struct nss_crypto_key *auth, uint32_t idx)
+{
+	struct nss_crypto_ctrl *ctrl = &gbl_crypto_ctrl;
+	struct nss_crypto_encr_cfg encr_cfg;
+	struct nss_crypto_auth_cfg auth_cfg;
+	enum nss_crypto_cipher cipher_algo;
+	nss_crypto_status_t status;
+	int i;
+
+	memset(&encr_cfg, 0, sizeof(struct nss_crypto_encr_cfg));
+	memset(&auth_cfg, 0, sizeof(struct nss_crypto_auth_cfg));
+
+	BUG_ON(in_atomic());
+
+	/*
+	 * validate cipher
+	 */
+	status = nss_crypto_validate_cipher(cipher, &encr_cfg);
+	if (status != NSS_CRYPTO_STATUS_OK) {
+		return status;
+	}
+
+	/*
+	 * validate authentication
+	 */
+	status = nss_crypto_validate_auth(auth, &auth_cfg);
+	if (status != NSS_CRYPTO_STATUS_OK) {
+		return status;
+	}
+
+	spin_lock_bh(&ctrl->lock); /* index lock*/
+
+	set_bit(idx, ctrl->idx_bitmap);
+	clear_bit(idx, ctrl->idx_state_bitmap);
+
+	nss_crypto_update_cipher_info(&ctrl->idx_info[idx], cipher);
+	nss_crypto_update_auth_info(&ctrl->idx_info[idx], auth);
+	nss_crypto_update_idx_state(&ctrl->idx_info[idx], NSS_CRYPTO_SESSION_STATE_ACTIVE);
+
+	/*
+	 * program keys for all the engines for the given pipe pair (index)
+	 */
+	for (i = 0; i < ctrl->num_eng; i++) {
+		nss_crypto_key_update(&ctrl->eng[i], idx, &encr_cfg, &auth_cfg);
+	}
+
+	cipher_algo = cipher ? cipher->algo : NSS_CRYPTO_CIPHER_NULL;
+	spin_unlock_bh(&ctrl->lock); /* index unlock*/
+
+	nss_crypto_info("new index - %d (used - %d, max - %d)\n",idx, ctrl->num_idxs, NSS_CRYPTO_MAX_IDXS);
+	nss_crypto_dump_bitmap(ctrl->idx_bitmap, NSS_CRYPTO_MAX_IDXS);
+
+	return NSS_CRYPTO_STATUS_OK;
+}
+EXPORT_SYMBOL(nss_crypto_session_key_update);
+
+/*
  * nss_crypto_session_free()
  * 	free the crypto session, that was previously allocated
  */
