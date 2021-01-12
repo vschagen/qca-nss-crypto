@@ -370,15 +370,16 @@ void nss_crypto_transform_done(struct net_device *dev, struct sk_buff *skb, stru
 	struct nss_crypto_buf *buf = (struct nss_crypto_buf *)skb->data;
 	struct nss_crypto_buf_node *entry;
 	void *addr;
+	struct device *cdev = gbl_crypto_ctrl.eng[0].dev;
 
 	if (likely(buf->data_in == buf->data_out)) {
-		dma_unmap_single(NULL, buf->data_in, buf->data_len, DMA_BIDIRECTIONAL);
+		dma_unmap_single(cdev, buf->data_in, buf->data_len, DMA_BIDIRECTIONAL);
 	} else {
-		dma_unmap_single(NULL, buf->data_in, buf->data_len, DMA_TO_DEVICE);
-		dma_unmap_single(NULL, buf->data_out, buf->data_len, DMA_FROM_DEVICE);
+		dma_unmap_single(cdev, buf->data_in, buf->data_len, DMA_TO_DEVICE);
+		dma_unmap_single(cdev, buf->data_out, buf->data_len, DMA_FROM_DEVICE);
 	}
 
-	dma_unmap_single(NULL, buf->iv_addr,  L1_CACHE_BYTES, DMA_BIDIRECTIONAL);
+	dma_unmap_single(cdev, buf->iv_addr,  L1_CACHE_BYTES, DMA_BIDIRECTIONAL);
 
 	addr = phys_to_virt(buf->iv_addr);
 	entry = container_of(addr, struct nss_crypto_buf_node, results);
@@ -531,6 +532,7 @@ nss_crypto_status_t nss_crypto_transform_payload(nss_crypto_handle_t crypto, str
 	uint32_t paddr;
 	void *vaddr;
 	size_t len;
+	struct device *cdev = gbl_crypto_ctrl.eng[0].dev;
 
 	if (!buf->cb_fn) {
 		nss_crypto_warn("%p:no buffer(%p) callback present\n", crypto, buf);
@@ -544,7 +546,7 @@ nss_crypto_status_t nss_crypto_transform_payload(nss_crypto_handle_t crypto, str
 	 */
 	vaddr = (void *)buf->data_in;
 	len = buf->data_len;
-	paddr = dma_map_single(NULL, vaddr, len, DMA_TO_DEVICE);
+	paddr = dma_map_single(cdev, vaddr, len, DMA_TO_DEVICE);
 	buf->data_in = paddr;
 
 	if (vaddr == (void *)buf->data_out) {
@@ -555,14 +557,14 @@ nss_crypto_status_t nss_crypto_transform_payload(nss_crypto_handle_t crypto, str
 		 */
 		vaddr = (void *)buf->data_out;
 		len = buf->data_len;
-		paddr = dma_map_single(NULL, vaddr, len, DMA_FROM_DEVICE);
+		paddr = dma_map_single(cdev, vaddr, len, DMA_FROM_DEVICE);
 		buf->data_out = paddr;
 	}
 
 	/*
 	 * We need to map the results into IV
 	 */
-	paddr = dma_map_single(NULL, entry->results, L1_CACHE_BYTES, DMA_BIDIRECTIONAL);
+	paddr = dma_map_single(cdev, (void *)buf->iv_addr, L1_CACHE_BYTES, DMA_BIDIRECTIONAL);
 	buf->hash_addr = paddr;
 	buf->iv_addr = paddr;
 
@@ -732,4 +734,3 @@ uint8_t *nss_crypto_get_hash_addr(struct nss_crypto_buf *buf)
 	return (uint8_t *)buf->hash_addr;
 }
 EXPORT_SYMBOL(nss_crypto_get_hash_addr);
-
