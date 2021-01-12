@@ -227,6 +227,10 @@ void nss_crypto_debugfs_add_session(struct nss_crypto_ctrl *ctrl, uint32_t idx)
 		debugfs_create_u32("NULL", S_IRUGO, temp_dentry, &idx_info->ckey.key_len);
 		break;
 
+	case NSS_CRYPTO_CIPHER_AES_ECB:
+		debugfs_create_u32("AES-ECB", S_IRUGO, temp_dentry, &idx_info->ckey.key_len);
+		break;
+
 	default:
 		nss_crypto_err("Unknown cipher algorithm:%d\n", cipher_algo);
 		break;
