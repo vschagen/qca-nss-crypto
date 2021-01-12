@@ -248,6 +248,24 @@ nss_crypto_status_t nss_crypto_session_alloc(nss_crypto_handle_t crypto, struct 
 						uint32_t *session_idx);
 
 /**
+ * @brief Update a session index, this should create the necessary state
+ *        across all the layers
+ *
+ * @param crypto[IN] crypto device handle
+ * @param cipher[IN] cipher specific elements {cipher_algo, key & key_length}
+ * @param auth[IN] auth specific elememts {auth_algo, key & key_length}
+ * @param session_idx[IN] session index for the crypto transform
+ *
+ * @return status of the call
+ *
+ * ENOMEM implies out of index
+ * ENOSUPP implies unsupported configuration
+ *
+ */
+nss_crypto_status_t nss_crypto_session_key_update(nss_crypto_handle_t crypto, struct nss_crypto_key *cipher, struct nss_crypto_key *auth,
+						uint32_t idx);
+
+/**
  * @brief Allocate a new session index with key information in secure memory
  *        this should create the necessary state across all the layers
  *
