@@ -554,6 +554,32 @@ static nss_crypto_status_t nss_crypto_validate_cipher(struct nss_crypto_key *cip
 	}
 
 	/*
+	 * AES-128 ECB
+	 */
+	if ((cipher->algo == NSS_CRYPTO_CIPHER_AES_ECB) && (cipher->key_len == NSS_CRYPTO_KEYLEN_AES128)) {
+		encr_cfg->cfg |= CRYPTO_ENCR_SEG_CFG_KEY_AES128;
+		encr_cfg->cfg |= CRYPTO_ENCR_SEG_CFG_ALG_AES;
+		encr_cfg->cfg |= CRYPTO_ENCR_SEG_CFG_MODE_ECB;
+
+		memcpy(encr_cfg->key, cipher->key, NSS_CRYPTO_KEYLEN_AES128);
+
+		return NSS_CRYPTO_STATUS_OK;
+	}
+
+	/*
+	 * AES-256 ECB
+	 */
+	if ((cipher->algo == NSS_CRYPTO_CIPHER_AES_ECB) && (cipher->key_len == NSS_CRYPTO_KEYLEN_AES256)) {
+		encr_cfg->cfg |= CRYPTO_ENCR_SEG_CFG_KEY_AES256;
+		encr_cfg->cfg |= CRYPTO_ENCR_SEG_CFG_ALG_AES;
+		encr_cfg->cfg |= CRYPTO_ENCR_SEG_CFG_MODE_ECB;
+
+		memcpy(encr_cfg->key, cipher->key, NSS_CRYPTO_KEYLEN_AES256);
+
+		return NSS_CRYPTO_STATUS_OK;
+	}
+
+	/*
 	 * DES-64 (SINGLE_DES)
 	 */
 	if ((cipher->algo == NSS_CRYPTO_CIPHER_DES) && (cipher->key_len == NSS_CRYPTO_KEYLEN_DES)) {
